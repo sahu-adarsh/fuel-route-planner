@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'stations',
     'routing',
+    'optimization',
 ]
 
 MIDDLEWARE = [
