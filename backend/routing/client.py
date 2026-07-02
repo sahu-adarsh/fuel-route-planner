@@ -18,6 +18,24 @@ ORS_BASE_URL = "https://api.openrouteservice.org"
 METERS_PER_MILE = 1609.344
 DEFAULT_PROFILE = "driving-hgv"
 
+# Pelias layers coarser than a city - a match at this level (e.g. "iowa"
+# resolving to the whole state) geocodes fine but its centroid is usually
+# nowhere near a routable road, so the *directions* call fails later with
+# an opaque 404. Catching it here, before that call is even made, is what
+# lets us give a specific, actionable message instead.
+_TOO_COARSE_LAYERS = frozenset({
+    "continent", "empire", "dependency", "country", "macroregion",
+    "region", "macrocounty", "county", "disputed", "ocean", "marinearea",
+})
+_LAYER_DISPLAY_NAMES = {
+    "region": "state",
+    "macroregion": "region",
+    "macrocounty": "county",
+    "dependency": "territory",
+    "marinearea": "marine area",
+    "disputed": "disputed territory",
+}
+
 
 @dataclass(frozen=True)
 class Coordinates:
@@ -33,6 +51,21 @@ class DirectionsResult:
 
 
 Location = Union[str, Coordinates]
+
+
+def _describe_http_error(exc: requests.RequestException) -> str:
+    """Prefers ORS's own error.message from the response body (e.g. "Could
+    not find routable point within a radius of 350.0 meters...") over the
+    generic requests exception text, which is opaque to an end user."""
+    response = getattr(exc, "response", None)
+    if response is not None:
+        try:
+            message = response.json().get("error", {}).get("message")
+            if message:
+                return message
+        except (ValueError, AttributeError):
+            pass
+    return str(exc)
 
 
 class OpenRouteServiceClient:
@@ -63,7 +96,7 @@ class OpenRouteServiceClient:
             )
             response.raise_for_status()
         except requests.RequestException as exc:
-            raise UpstreamRoutingError(f"Directions request failed: {exc}") from exc
+            raise UpstreamRoutingError(f"Could not compute a route: {_describe_http_error(exc)}") from exc
 
         try:
             feature = response.json()["features"][0]
@@ -91,7 +124,7 @@ class OpenRouteServiceClient:
             )
             response.raise_for_status()
         except requests.RequestException as exc:
-            raise UpstreamRoutingError(f"Geocoding request failed: {exc}") from exc
+            raise UpstreamRoutingError(f"Could not resolve location: {_describe_http_error(exc)}") from exc
 
         try:
             features = response.json()["features"]
@@ -99,11 +132,21 @@ class OpenRouteServiceClient:
             raise UpstreamRoutingError(f"Unexpected geocoding response shape: {exc}") from exc
 
         if not features:
-            raise UnresolvableLocationError(f"Could not resolve location: {text!r}")
+            raise UnresolvableLocationError(f"Could not find a location matching {text!r}.")
 
         feature = features[0]
-        if feature["properties"].get("country_a") != "USA":
-            raise UnresolvableLocationError(f"Location resolved outside the US: {text!r}")
+        properties = feature["properties"]
+
+        if properties.get("country_a") != "USA":
+            raise UnresolvableLocationError(f"{text!r} resolved outside the US.")
+
+        layer = properties.get("layer")
+        if layer in _TOO_COARSE_LAYERS:
+            kind = _LAYER_DISPLAY_NAMES.get(layer, layer)
+            raise UnresolvableLocationError(
+                f"{text!r} resolved to a whole {kind}, not a specific place - "
+                f"please include a city (e.g. 'Chicago, IL')."
+            )
 
         lng, lat = feature["geometry"]["coordinates"]
         return Coordinates(lat=lat, lng=lng)
