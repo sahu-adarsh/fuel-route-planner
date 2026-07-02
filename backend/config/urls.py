@@ -17,9 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from routing.views import RouteView
+
 from .views import health_check
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/health/', health_check, name='health-check'),
+    path('api/v1/route/', RouteView.as_view(), name='route'),
 ]

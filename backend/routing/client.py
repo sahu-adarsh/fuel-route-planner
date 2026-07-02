@@ -26,7 +26,7 @@ class Coordinates:
 
 
 @dataclass(frozen=True)
-class RouteResult:
+class DirectionsResult:
     distance_miles: float
     duration_hours: float
     geometry: dict  # GeoJSON LineString, [lng, lat] pairs
@@ -51,7 +51,7 @@ class OpenRouteServiceClient:
             return location
         return self._geocode(location)
 
-    def get_route(self, start: Coordinates, end: Coordinates, profile: str = DEFAULT_PROFILE) -> RouteResult:
+    def get_route(self, start: Coordinates, end: Coordinates, profile: str = DEFAULT_PROFILE) -> DirectionsResult:
         self._require_api_key()
         url = f"{ORS_BASE_URL}/v2/directions/{profile}/geojson"
         try:
@@ -68,7 +68,7 @@ class OpenRouteServiceClient:
         try:
             feature = response.json()["features"][0]
             summary = feature["properties"]["summary"]
-            return RouteResult(
+            return DirectionsResult(
                 distance_miles=summary["distance"] / METERS_PER_MILE,
                 duration_hours=summary["duration"] / 3600,
                 geometry=feature["geometry"],
