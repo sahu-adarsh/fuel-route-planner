@@ -1,0 +1,19 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-87.6298, 41.8781]
+      },
+      "properties": {
+        "id": "example-1",
+        "label": "Chicago, IL, USA",
+        "name": "Chicago",
+        "country_a": "USA",
+        "region_a": "IL"
+      }
+    }
+  ]
+}
