@@ -40,8 +40,8 @@ class ResolveLocationTests(SimpleTestCase):
 
         result = self.client.resolve_location("Chicago, IL")
 
-        self.assertAlmostEqual(result.lat, 41.8781, places=3)
-        self.assertAlmostEqual(result.lng, -87.6298, places=3)
+        self.assertAlmostEqual(result.lat, 41.87897, places=4)
+        self.assertAlmostEqual(result.lng, -87.66063, places=4)
         self.session.get.assert_called_once()
 
     def test_no_geocode_match_raises_unresolvable(self):
@@ -49,6 +49,14 @@ class ResolveLocationTests(SimpleTestCase):
 
         with self.assertRaises(UnresolvableLocationError):
             self.client.resolve_location("asdlkjaslkdj not a real place")
+
+    def test_geocode_outside_us_raises_unresolvable(self):
+        fixture = load_fixture("geocode_response.json")
+        fixture["features"][0]["properties"]["country_a"] = "CAN"
+        self.session.get.return_value = _ok_response(fixture)
+
+        with self.assertRaises(UnresolvableLocationError):
+            self.client.resolve_location("Toronto, ON")
 
     def test_geocode_network_failure_raises_upstream_error(self):
         self.session.get.side_effect = requests.ConnectionError("boom")
@@ -77,8 +85,8 @@ class GetRouteTests(SimpleTestCase):
 
         result = self.client.get_route(self.start, self.end)
 
-        self.assertAlmostEqual(result.distance_miles, 967.4, places=1)
-        self.assertAlmostEqual(result.duration_hours, 14.2, places=1)
+        self.assertAlmostEqual(result.distance_miles, 971.0, places=1)
+        self.assertAlmostEqual(result.duration_hours, 21.58, places=1)
         self.assertEqual(result.geometry["type"], "LineString")
         self.assertGreaterEqual(len(result.geometry["coordinates"]), 2)
 

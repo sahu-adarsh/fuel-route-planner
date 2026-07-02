@@ -101,7 +101,11 @@ class OpenRouteServiceClient:
         if not features:
             raise UnresolvableLocationError(f"Could not resolve location: {text!r}")
 
-        lng, lat = features[0]["geometry"]["coordinates"]
+        feature = features[0]
+        if feature["properties"].get("country_a") != "USA":
+            raise UnresolvableLocationError(f"Location resolved outside the US: {text!r}")
+
+        lng, lat = feature["geometry"]["coordinates"]
         return Coordinates(lat=lat, lng=lng)
 
     def _require_api_key(self):
