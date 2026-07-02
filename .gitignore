@@ -1,12 +1,13 @@
 .env
 docs/
 
-# Python / Django
-__pycache__/
-*.pyc
-backend/.venv/
-backend/db.sqlite3
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
 
-# Node / frontend
-frontend/node_modules/
-frontend/dist/
+# Deployment artifacts (Lambda packaging, IaC output)
+*.zip
+.aws-sam/
+.serverless/
+cdk.out/
