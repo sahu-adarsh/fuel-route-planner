@@ -1,0 +1,135 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Fuel Route Planner - Django API on Lambda (via AWS Lambda Web Adapter,
+  docs/decisions.md ADR-005) behind API Gateway, and a React frontend on
+  S3 + CloudFront (ADR-006).
+
+Parameters:
+  OrsApiKey:
+    Type: String
+    NoEcho: true
+    Description: OpenRouteService API key (see docs/decisions.md ADR-001)
+  DjangoSecretKey:
+    Type: String
+    NoEcho: true
+    Description: Django SECRET_KEY for the deployed environment
+  CorsAllowedOrigins:
+    Type: String
+    Default: "http://localhost:5173"
+    Description: >
+      Comma-separated allowed origins for the frontend. Update to the real
+      CloudFront domain once known (chicken-and-egg: the domain doesn't
+      exist until this stack's first deploy).
+
+Globals:
+  Function:
+    Timeout: 29
+    MemorySize: 512
+
+Resources:
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: fuel-route-planner-api
+      CodeUri: backend/
+      Handler: run.sh
+      Runtime: python3.13
+      Architectures: [arm64]
+      Layers:
+        - !Sub arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerArm64:28
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          PORT: "8000"
+          DEBUG: "False"
+          SECRET_KEY: !Ref DjangoSecretKey
+          ALLOWED_HOSTS: "*"
+          ORS_API_KEY: !Ref OrsApiKey
+          CORS_ALLOWED_ORIGINS: !Ref CorsAllowedOrigins
+          DB_PATH: /tmp/db.sqlite3
+      Events:
+        Api:
+          Type: HttpApi
+      Tags:
+        Project: fuel-route-planner
+
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "fuel-route-planner-frontend-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Project
+          Value: fuel-route-planner
+
+  FrontendOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "fuel-route-planner-oac-${AWS::AccountId}"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  FrontendDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: frontend-s3-origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # AWS Managed-CachingOptimized
+          Compress: true
+        Origins:
+          - Id: frontend-s3-origin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt FrontendOAC.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        # A client-side-routed SPA has no /some/path object in S3 - let
+        # CloudFront serve index.html for those instead of a bare 403/404.
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+      Tags:
+        - Key: Project
+          Value: fuel-route-planner
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${FrontendBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${FrontendDistribution}"
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/"
+  FrontendBucketName:
+    Value: !Ref FrontendBucket
+  CloudFrontDomain:
+    Value: !GetAtt FrontendDistribution.DomainName
+  CloudFrontUrl:
+    Value: !Sub "https://${FrontendDistribution.DomainName}"
+  CloudFrontDistributionId:
+    Value: !Ref FrontendDistribution

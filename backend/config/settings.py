@@ -96,7 +96,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # No live database in production (docs/decisions.md ADR-002) - the
+        # request path never queries it. This only exists so the ORM/admin
+        # work locally. DB_PATH defaults to a repo-local file for that, but
+        # Lambda's filesystem is read-only outside /tmp, so it's pointed
+        # there in the deployed environment as a defensive measure.
+        'NAME': os.environ.get('DB_PATH', str(BASE_DIR / 'db.sqlite3')),
     }
 }
 
