@@ -16,11 +16,12 @@ Parameters:
     Description: Django SECRET_KEY for the deployed environment
   CorsAllowedOrigins:
     Type: String
-    Default: "http://localhost:5173"
+    Default: "https://d12yi4wtavx758.cloudfront.net,http://localhost:5173"
     Description: >
-      Comma-separated allowed origins for the frontend. Update to the real
-      CloudFront domain once known (chicken-and-egg: the domain doesn't
-      exist until this stack's first deploy).
+      Comma-separated allowed origins for the frontend. Includes this
+      stack's own CloudFront domain (known after the first deploy - see
+      deploy/README.md) so a bare `sam deploy` for a later code change
+      can't accidentally regress CORS back to localhost-only.
 
 Globals:
   Function:
