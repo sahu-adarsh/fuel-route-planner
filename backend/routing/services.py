@@ -1,7 +1,7 @@
 """
 Orchestrates a single /api/v1/route/ request: resolve locations, fetch
 the route, filter candidate stations, run the refueling optimization,
-and shape the result - see docs/api-design.md.
+and shape the result.
 """
 from dataclasses import dataclass, field
 
@@ -114,7 +114,7 @@ def _same_raw_location(a, b) -> bool:
 def _reference_cost(distance_miles: float, candidates: list) -> float:
     """No stop is actually required for a trip this short, but the brief
     asks for a total cost unconditionally - report a reference figure
-    using the cheapest in-corridor price, per docs/assumptions.md A5."""
+    using the cheapest in-corridor price, per assumptions A5."""
     if not candidates:
         return 0.0
     cheapest_price = min(cs.station["price_per_gallon"] for cs in candidates)

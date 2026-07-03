@@ -2,14 +2,14 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
   Fuel Route Planner - Django API on Lambda (via AWS Lambda Web Adapter,
-  docs/decisions.md ADR-005) behind API Gateway, and a React frontend on
+  decisions ADR-005) behind API Gateway, and a React frontend on
   S3 + CloudFront (ADR-006).
 
 Parameters:
   OrsApiKey:
     Type: String
     NoEcho: true
-    Description: OpenRouteService API key (see docs/decisions.md ADR-001)
+    Description: OpenRouteService API key (decisions ADR-001)
   DjangoSecretKey:
     Type: String
     NoEcho: true

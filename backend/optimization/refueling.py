@@ -4,7 +4,7 @@ station problem": given stations at fixed positions along a line with a
 tank capacity (max_range_miles) and per-gallon prices, buy fuel (any
 fractional amount) so as to never run out, minimizing total cost.
 
-Three implementations, matching docs/optimizations.md 4.6:
+Three implementations, matching optimizations 4.6:
   - naive_min_cost: brute force over all subsets of stops - exponential,
     correctness baseline only, for small test cases.
   - dp_min_cost: dynamic programming - O(m^2), also optimal, used as an
@@ -14,7 +14,7 @@ Three implementations, matching docs/optimizations.md 4.6:
     a full purchase plan (not just the minimum cost).
 
 All three assume the vehicle starts at position 0 with a full tank
-(docs/assumptions.md A3), so the first leg is never charged.
+(assumptions A3), so the first leg is never charged.
 """
 import math
 from dataclasses import dataclass, field
@@ -196,7 +196,7 @@ def naive_min_cost(
     "fill the tank completely" at each chosen stop - O(3^m) (C(m,k) subsets
     times 2^k fill choices, summed over k, is 3^m by the binomial theorem).
     Correctness baseline only; only safe to call on small inputs
-    (docs/optimizations.md 4.6).
+    (optimizations 4.6).
 
     It's not enough to brute-force *which* stops to buy at: buying more
     than the minimum at an early cheap stop can leave leftover range that
