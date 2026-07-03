@@ -11,7 +11,8 @@
 
 <p align="center">
   <a href="https://d12yi4wtavx758.cloudfront.net"><strong>Live demo</strong></a> ·
-  <a href="https://pjtcs90ffi.execute-api.us-east-1.amazonaws.com"><strong>API</strong></a>
+  <a href="https://pjtcs90ffi.execute-api.us-east-1.amazonaws.com"><strong>API</strong></a> ·
+  <a href="https://www.loom.com/share/d9ce7fa642164a36baeeef24b8833195?t=242"><strong>Demo video</strong></a>
 </p>
 
 <p align="center">
