@@ -29,6 +29,38 @@
   color: var(--text);
 }
 
+.field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mode-toggle {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+}
+
+.mode-toggle button {
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.mode-toggle button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
 .field input {
   font: inherit;
   padding: 10px 12px;
@@ -43,7 +75,26 @@
   outline-offset: 1px;
 }
 
-.route-form button {
+.coord-inputs {
+  display: flex;
+  gap: 8px;
+}
+
+.coord-inputs input {
+  min-width: 0;
+}
+
+.coord-inputs input[type='number']::-webkit-inner-spin-button,
+.coord-inputs input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.coord-inputs input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.route-form > button {
   font: inherit;
   font-weight: 500;
   padding: 10px 20px;
@@ -54,7 +105,7 @@
   cursor: pointer;
 }
 
-.route-form button:disabled {
+.route-form > button:disabled {
   opacity: 0.6;
   cursor: default;
 }
